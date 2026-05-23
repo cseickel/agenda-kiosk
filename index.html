@@ -98,15 +98,15 @@
     let cachedData = null;
 
     function getJsonUrl() {
-      const base = window.location.href.split('?')[0];
       const params = new URLSearchParams(window.location.search);
       const data = params.get('data');
       if (data) {
         // This is for local development, json file specified in URL as ?data=file.json
         return data;
       }
+      const sheetsData = "https://script.google.com/macros/s/AKfycbx1s4OIhzDZyIFji4EDBsi2_fyQ1PFZ4nVs7lE9xlONzBcRVHzFKHBb7LxNRO94n7lNgQ/exec?format=json";
       const draft = params.get('draft') ? '&draft=true' : '';
-      return base + '?format=json' + draft;
+      return sheetsData + draft;
     }
 
     async function fetchData() {
