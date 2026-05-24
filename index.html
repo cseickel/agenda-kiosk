@@ -18,10 +18,16 @@
       color: white;
       font-family: 'Roboto', Calibri, Helvetica, sans-serif;
       font-size: 48px;
-      min-height: 100vh;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
     }
     .container {
-      width: 100vw;
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
       max-width: 100%;
       text-align: center;
       word-wrap: break-word;
@@ -29,12 +35,17 @@
       margin: 0.25 em;
       margin-bottom: 1em;
     }
+    .today-container {
+      border: none !important;
+      padding-top: 0.5em;
+      padding-bottom: 0.8em;
+    }
     .day-block {
       border-style: solid;
       border-width: 1px 0 0 0;
       border-image: linear-gradient(to right, transparent 5%, rgba(170,170,170,0.6) 5%, #aaa 8%, #aaa 92%, rgba(170,170,170,0.6) 95%, transparent 95%) 1;
-      padding-top: 0.5em;
-      padding-bottom: 0.5em;
+      padding-top: 0.8em;
+      padding-bottom: 0.8em;
     }
     .day-name {
       font-size: 1.333em;
@@ -83,17 +94,25 @@
   <script>
     const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const RELAX_MESSAGES = [
-      'Nothing to do today, relax!',
-      'Goof off day!',
-      'Take the day off',
-      'A peaceful day ahead',
-      'Rest and recharge',
-      'Enjoy the quiet day',
-      'Free day!'
-    ];
     const JSON_REFETCH_MS = 10 * 60 * 1000;
     const CONTENT_REFRESH_MS = 60 * 1000;
+
+    const EMPTY_MESSAGES = [
+      { future: "Free day", today: "This is a free day, enjoy!" },
+      { future: "Goof off day", today: "Today, you get to goof off!" },
+      { future: "Day off", today: "Take the day off!" },
+      { future: "No plans", today: "No plans today, do what you want!" },
+      { future: "Nothing to do", today: "Nothing to do today, relax!" },
+    ];
+    const EmptyMessagesByDay = [];
+    // fill the EmptyMessagesByDay array with at least 31 messages
+    while (EmptyMessagesByDay.length < 31) {
+      EmptyMessagesByDay.push(...EMPTY_MESSAGES);
+    }
+
+    function getEmptyDayMessage(date) {
+      return EmptyMessagesByDay[date.getDate()];
+    }
 
     let cachedData = null;
 
@@ -192,10 +211,6 @@
       return date.getHours() !== 0 || date.getMinutes() !== 0;
     }
 
-    function getRandomRelaxMessage() {
-      return RELAX_MESSAGES[Math.floor(Math.random() * RELAX_MESSAGES.length)];
-    }
-
     function groupAgendaByDay(agenda) {
       const groups = new Map();
       for (const item of agenda) {
@@ -262,6 +277,7 @@
         const dayName = document.createElement('span');
 
         if (isToday) {
+          block.className = 'today-container';
           dayName.textContent = "Today is " + DAYS[group.date.getDay()];
           dayName.className = 'today-name';
           dayHeader.appendChild(dayName)
@@ -307,7 +323,7 @@
           if (futureItems.length === 0) {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'agenda-item';
-            itemDiv.textContent = getRandomRelaxMessage();
+            itemDiv.textContent = getEmptyDayMessage(group.date).today;
             agendaDiv.appendChild(itemDiv);
           } else {
             for (const item of futureItems) {
@@ -344,7 +360,7 @@
           if (group.items.length === 0) {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'agenda-item';
-            itemDiv.textContent = getRandomRelaxMessage();
+            itemDiv.textContent = getEmptyDayMessage(group.date).future;
             agendaDiv.appendChild(itemDiv);
           } else {
             for (const item of group.items) {
