@@ -16,8 +16,8 @@
     body {
       background: black;
       color: white;
-      font-family: 'Roboto', Calibri, Helvetica, sans-serif;
-      font-size: 48px;
+      font-family: Calibri, Helvetica, sans-serif;
+      font-size: 60px;
       width: 100vw;
       height: 100vh;
       display: flex;
@@ -39,6 +39,7 @@
       border: none !important;
       padding-top: 0.5em;
       padding-bottom: 0.8em;
+      font-weight: 100;
     }
     .day-block {
       border-style: solid;
@@ -53,9 +54,16 @@
       display: inline;
     }
     .today-name {
-      font-size: 1.75em;
-      font-weight: 700;
+      font-size: 2em;
+      font-weight: bold;
       display: inline;
+      color: steelblue;
+    }
+    .today-name::before {
+      font-weight: 100;
+      opacity: 0.8;
+      color: lightsteelblue;
+      content: "Today is ";
     }
     .days-away {
       font-size: 1em;
@@ -67,7 +75,9 @@
     }
     .date-line {
       font-size: 1em;
-      margin-bottom: 0.4
+      margin-bottom: 0.5em;
+      color: lightsteelblue;
+      line-height: 0.6em;
     }
     .messages {
       font-size: 1em;
@@ -275,17 +285,16 @@
         dayHeader.className = 'day-header';
 
         const dayName = document.createElement('span');
+        dayName.textContent = DAYS[group.date.getDay()];
 
         if (isToday) {
           block.className = 'today-container';
-          dayName.textContent = "Today is " + DAYS[group.date.getDay()];
           dayName.className = 'today-name';
           dayHeader.appendChild(dayName)
           block.style.borderTop = "none";
           block.style.marginTop = "0";
         } else {
-          dayName.textContent = DAYS[group.date.getDay()];
-        dayName.className = 'day-name';
+          dayName.className = 'day-name';
           dayHeader.appendChild(dayName);
           const daysAwaySpan = document.createElement('span');
           daysAwaySpan.className = 'days-away';
