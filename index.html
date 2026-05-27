@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
     html {
-      font-size: 6vh;
+      font-size: 4vh;
     }
     * {
       margin: 0;
@@ -40,15 +40,22 @@
     .today-container {
       border: none !important;
       padding-top: 0.5em;
-      padding-bottom: 1.2rem;
+      padding-bottom: 1.0rem;
       font-weight: 100;
     }
     .day-block {
       border-style: solid;
       border-width: 1px 0 0 0;
-      border-image: linear-gradient(to right, transparent 25%, rgba(170,170,170,0.6) 25%, #aaa 18%, #aaa 72%, rgba(170,170,170,0.6) 75%, transparent 75%) 1;
-      padding-top: 1.2rem;
-      padding-bottom: 1.2rem;
+      border-image: linear-gradient(to right,
+        transparent 16%,
+        #222 17%,
+        #333 20%,
+        #333 80%,
+        #222 83%,
+        transparent 84%
+      ) 1;
+      padding-top: 0.85em;
+      padding-bottom: 0.85em;
       display: inline-block;
     }
     .day-name {
