@@ -40,21 +40,27 @@
     .today-container {
       border: none !important;
       padding-top: 0.5em;
-      padding-bottom: 0.8em;
+      padding-bottom: 1.2rem;
       font-weight: 100;
     }
     .day-block {
       border-style: solid;
       border-width: 1px 0 0 0;
       border-image: linear-gradient(to right, transparent 25%, rgba(170,170,170,0.6) 25%, #aaa 18%, #aaa 72%, rgba(170,170,170,0.6) 75%, transparent 75%) 1;
-      padding-top: 0.8em;
-      padding-bottom: 0.8em;
+      padding-top: 1.2rem;
+      padding-bottom: 1.2rem;
       display: inline-block;
     }
     .day-name {
-      font-size: 1.333em;
-      font-weight: 700;
-      display: inline;
+      font-size: 1em;
+      opacity: 0.7;
+      margin-left: 0.5em;
+    }
+    .day-name::before {
+      content: "(";
+    }
+    .day-name::after {
+      content: ")";
     }
     .today-name {
       font-size: 2rem;
@@ -69,13 +75,30 @@
       color: lightsteelblue;
       display: inline;
     }
+    .time-block {
+      font-size: 1.75rem;
+      line-height: 1.75rem;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+      display: inline-block;
+      color: steelblue;
+    }
+    .time-block::before {
+      content: "The time is ";
+      font-size: 1.5rem;
+      font-weight: 100;
+      opacity: 0.8;
+      color: lightsteelblue;
+      display: inline;
+    }
     .days-away {
-      font-size: 1em;
-      opacity: 0.7;
-      margin-left: 0.5em;
+      font-size: 1.333em;
+      font-weight: 700;
+      display: inline;
     }
     .day-header {
       margin-bottom: 0.1em;
+      color: lightsteelblue;
     }
     .date-line {
       font-size: 1em;
@@ -106,6 +129,7 @@
   <div class="container" id="app"></div>
 
   <script>
+    const DEPLOYMENT_ID = 'AKfycbz6wmtsa31IYSTqvP42Uq_Rg0Q6rKdsnWsPyNhsfDAswMf9_niRDlsQIjo1XyIIEbqt3w';
     const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const JSON_REFETCH_MS = 10 * 60 * 1000;
@@ -137,7 +161,7 @@
         // This is for local development, json file specified in URL as ?data=file.json
         return data;
       }
-      const sheetsData = "https://script.google.com/macros/s/AKfycbx1s4OIhzDZyIFji4EDBsi2_fyQ1PFZ4nVs7lE9xlONzBcRVHzFKHBb7LxNRO94n7lNgQ/exec?format=json";
+      const sheetsData = `https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec?format=json`;
       const draft = params.get('draft') ? '&draft=true' : '';
       return sheetsData + draft;
     }
@@ -180,19 +204,20 @@
       if (diffMs <= 0) return null;
 
       const diffMins = Math.floor(diffMs / 60000);
-      if (diffMins < 60) {
-        return `in ${diffMins} minute${diffMins !== 1 ? 's' : ''}`;
-      }
       const diffHours = Math.round(diffMins / 60);
-      return `in ${diffHours} hour${diffHours !== 1 ? 's' : ''}`;
+      if (diffMins < 60 && diffHours <= 1) {
+        return `${diffMins} minute${diffMins !== 1 ? 's' : ''}`;
+      }
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''}`;
     }
 
     function getDaysAway(eventDate, today) {
       const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
       const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const diffDays = Math.round((eventDay - todayDay) / (1000 * 60 * 60 * 24));
-      if (diffDays === 1) return 'tomorrow';
-      return `${diffDays} days away`;
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Tomorrow';
+      return `In ${diffDays} days`;
     }
 
     function applyStyles(element, styleObj) {
@@ -227,11 +252,26 @@
 
     function groupAgendaByDay(agenda) {
       const groups = new Map();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       for (const item of agenda) {
         const date = new Date(item.date);
+        const text = item.text.map(t => t.content).join('');
+        if (date < today) {
+          console.log("Skipping item because date is in the past",{text , date, today});
+          continue;
+        }
         const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
         if (!groups.has(dayKey)) {
           groups.set(dayKey, { date, items: [] });
+        }
+        if (item.showAfter) {
+          const showAfter = new Date(item.showAfter);
+          if (showAfter > today) {
+            console.log("Skipping item because showAfter",{text, showAfter, today});
+            continue;
+          }
         }
         groups.get(dayKey).items.push({ ...item, dateObj: date, allDay: !hasTime(date) });
       }
@@ -272,10 +312,38 @@
       const container = document.getElementById('app');
       const fragment = document.createDocumentFragment();
 
+      const block = document.createElement('div');
+      block.className = 'today-container';
+
+      const todayHeader = document.createElement('div');
+      todayHeader.className = 'day-header';
+      const todayIs = document.createElement('span');
+      todayIs.className = 'date-block';
+      todayIs.textContent = "Today is ";
+      const todayName = document.createElement('span');
+      todayName.className = 'today-name';
+      todayName.textContent = DAYS[now.getDay()] + " ";
+      const dateBlock = document.createElement('span');
+      dateBlock.className = 'date-block';
+      dateBlock.textContent = formatDate(now);
+
+      todayHeader.appendChild(todayIs);
+      todayHeader.appendChild(todayName)
+      todayHeader.appendChild(dateBlock);
+      block.appendChild(todayHeader);
+
+      const timeBlock = document.createElement('span');
+      timeBlock.className = 'time-block';
+      timeBlock.textContent = formatTime(now);
+      block.appendChild(timeBlock);
+      block.style.borderTop = "none";
+      block.style.marginTop = "0";
+      fragment.appendChild(block);
+
       relevantGroups.forEach((group, index) => {
         const isToday = isSameDay(group.date, now);
         const scale = Math.pow(0.9, index);
-        const opacity = Math.pow(0.8, index);
+        const opacity = Math.pow(0.9, index);
 
         const block = document.createElement('div');
         block.className = 'day-block';
@@ -287,35 +355,20 @@
         // Day header (name + optional days away)
         const dayHeader = document.createElement('div');
         dayHeader.className = 'day-header';
-
         const dayName = document.createElement('span');
         dayName.textContent = DAYS[group.date.getDay()];
-
-        if (isToday) {
-          block.className = 'today-container';
-          const todayIs = document.createElement('span');
-          todayIs.className = 'date-block';
-          todayIs.textContent = "Today is ";
-          dayHeader.appendChild(todayIs);
-          dayName.className = 'today-name';
-          dayName.textContent += " ";
-          dayHeader.appendChild(dayName)
-          const dateBlock = document.createElement('span');
-          dateBlock.className = 'date-block';
-          dateBlock.textContent = formatDate(group.date);
-          dayName.appendChild(dateBlock);
-          block.style.borderTop = "none";
-          block.style.marginTop = "0";
-        } else {
-          dayName.className = 'day-name';
-          dayHeader.appendChild(dayName);
-          const daysAwaySpan = document.createElement('span');
-          daysAwaySpan.className = 'days-away';
-          daysAwaySpan.textContent = getDaysAway(group.date, now);
-          dayHeader.appendChild(daysAwaySpan);
+        dayName.className = 'day-name';
+        const daysAwaySpan = document.createElement('span');
+        let daysAway = getDaysAway(group.date, now);
+        if (daysAway === 'Today') {
+          daysAway = "Today's Agenda";
         }
-
+        daysAwaySpan.className = 'days-away';
+        daysAwaySpan.textContent = daysAway;
+        dayHeader.appendChild(daysAwaySpan);
+        dayHeader.appendChild(dayName);
         block.appendChild(dayHeader);
+
 
         if (isToday) {
           // Messages
@@ -345,21 +398,20 @@
             for (const item of futureItems) {
               const itemDiv = document.createElement('div');
               itemDiv.className = 'agenda-item';
+              itemDiv.appendChild(renderTextArray(item.text));
 
               if (!item.allDay) {
                 const timeSpan = document.createElement('span');
-                timeSpan.textContent = formatTime(item.dateObj) + ' - ';
+                timeSpan.textContent = ' at ' + formatTime(item.dateObj);
                 itemDiv.appendChild(timeSpan);
-              }
 
-              itemDiv.appendChild(renderTextArray(item.text));
-
-              const countdown = getCountdown(item.dateObj, now);
-              if (countdown) {
-                const countdownSpan = document.createElement('span');
-                countdownSpan.className = 'countdown';
-                countdownSpan.textContent = ` (${countdown})`;
-                itemDiv.appendChild(countdownSpan);
+                const countdown = getCountdown(item.dateObj, now);
+                if (countdown) {
+                  const countdownSpan = document.createElement('span');
+                  countdownSpan.className = 'countdown';
+                  countdownSpan.textContent = `, which is ${countdown} from now`;
+                  itemDiv.appendChild(countdownSpan);
+                }
               }
 
               agendaDiv.appendChild(itemDiv);
@@ -383,11 +435,11 @@
               const itemDiv = document.createElement('div');
               itemDiv.className = 'agenda-item';
 
-              if (isTomorrow && hasTime(item.dateObj)) {
-                const timeSpan = document.createElement('span');
-                timeSpan.textContent = formatTime(item.dateObj) + ' - ';
-                itemDiv.appendChild(timeSpan);
-              }
+              // if (isTomorrow && hasTime(item.dateObj)) {
+              //   const timeSpan = document.createElement('span');
+              //   timeSpan.textContent = formatTime(item.dateObj) + ' - ';
+              //   itemDiv.appendChild(timeSpan);
+              // }
 
               itemDiv.appendChild(renderTextArray(item.text));
               agendaDiv.appendChild(itemDiv);
