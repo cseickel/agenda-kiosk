@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    html {
+      font-size: 6vh;
+    }
     * {
       margin: 0;
       padding: 0;
@@ -17,16 +20,15 @@
       background: black;
       color: white;
       font-family: Calibri, Helvetica, sans-serif;
-      font-size: 60px;
       width: 100vw;
-      height: 100vh;
+      height: 100%;
       display: flex;
     }
     .container {
       display: flex;
       flex: 1;
       flex-direction: column;
-      justify-content: center;
+      justify-content: top;
       align-items: stretch;
       max-width: 100%;
       text-align: center;
@@ -47,6 +49,7 @@
       border-image: linear-gradient(to right, transparent 25%, rgba(170,170,170,0.6) 25%, #aaa 18%, #aaa 72%, rgba(170,170,170,0.6) 75%, transparent 75%) 1;
       padding-top: 0.8em;
       padding-bottom: 0.8em;
+      display: inline-block;
     }
     .day-name {
       font-size: 1.333em;
@@ -54,16 +57,17 @@
       display: inline;
     }
     .today-name {
-      font-size: 2em;
+      font-size: 2rem;
       font-weight: bold;
       display: inline;
       color: steelblue;
     }
-    .today-name::before {
+    .date-block {
+      font-size: 1.5rem;
       font-weight: 100;
       opacity: 0.8;
       color: lightsteelblue;
-      content: "Today is ";
+      display: inline;
     }
     .days-away {
       font-size: 1em;
@@ -229,7 +233,7 @@
         if (!groups.has(dayKey)) {
           groups.set(dayKey, { date, items: [] });
         }
-        groups.get(dayKey).items.push({ ...item, dateObj: date });
+        groups.get(dayKey).items.push({ ...item, dateObj: date, allDay: !hasTime(date) });
       }
       // Sort groups by date
       const sorted = Array.from(groups.values()).sort((a, b) => a.date - b.date);
@@ -270,7 +274,7 @@
 
       relevantGroups.forEach((group, index) => {
         const isToday = isSameDay(group.date, now);
-        const scale = Math.pow(0.8, index);
+        const scale = Math.pow(0.9, index);
         const opacity = Math.pow(0.8, index);
 
         const block = document.createElement('div');
@@ -289,8 +293,17 @@
 
         if (isToday) {
           block.className = 'today-container';
+          const todayIs = document.createElement('span');
+          todayIs.className = 'date-block';
+          todayIs.textContent = "Today is ";
+          dayHeader.appendChild(todayIs);
           dayName.className = 'today-name';
+          dayName.textContent += " ";
           dayHeader.appendChild(dayName)
+          const dateBlock = document.createElement('span');
+          dateBlock.className = 'date-block';
+          dateBlock.textContent = formatDate(group.date);
+          dayName.appendChild(dateBlock);
           block.style.borderTop = "none";
           block.style.marginTop = "0";
         } else {
@@ -305,12 +318,6 @@
         block.appendChild(dayHeader);
 
         if (isToday) {
-          // Date line
-          const dateLine = document.createElement('div');
-          dateLine.className = 'date-line';
-          dateLine.textContent = formatDate(group.date);
-          block.appendChild(dateLine);
-
           // Messages
           if (data.messages && data.messages.length > 0) {
             const messagesDiv = document.createElement('div');
@@ -328,7 +335,7 @@
           const agendaDiv = document.createElement('div');
           agendaDiv.className = 'agenda';
 
-          const futureItems = group.items.filter(item => item.dateObj > now);
+          const futureItems = group.items.filter(item => item.dateObj > now || item.allDay);
           if (futureItems.length === 0) {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'agenda-item';
@@ -339,7 +346,7 @@
               const itemDiv = document.createElement('div');
               itemDiv.className = 'agenda-item';
 
-              if (hasTime(item.dateObj)) {
+              if (!item.allDay) {
                 const timeSpan = document.createElement('span');
                 timeSpan.textContent = formatTime(item.dateObj) + ' - ';
                 itemDiv.appendChild(timeSpan);
