@@ -132,7 +132,7 @@
     const DEPLOYMENT_ID = 'AKfycbz6wmtsa31IYSTqvP42Uq_Rg0Q6rKdsnWsPyNhsfDAswMf9_niRDlsQIjo1XyIIEbqt3w';
     const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const JSON_REFETCH_MS = 10 * 60 * 1000;
+    const JSON_REFETCH_MS = 5 * 60 * 1000;
     const CONTENT_REFRESH_MS = 60 * 1000;
 
     const EMPTY_MESSAGES = [
@@ -460,14 +460,27 @@
       const data = await fetchData();
       render(data);
 
-      // Refresh content every minute (uses cached data)
-      setInterval(() => render(cachedData), CONTENT_REFRESH_MS);
+      // refresh page at 4am every day to get new code
+      const nextPageReload = new Date();
+      if (nextPageReload.getHours() >= 4) {
+        nextPageReload.setDate(nextPageReload.getDate() + 1);
+      }
+      nextPageReload.setHours(4, 0, 0, 0);
+      // reload data every 5 minutes
+      let lastDataLoad = new Date();
 
-      // Refetch JSON every 10 minutes
-      setInterval(async () => {
-        await fetchData();
-        render(cachedData);
-      }, JSON_REFETCH_MS);
+      // Refresh content every minute (uses cached data)
+      setInterval(() => {
+        if (Date.now() > nextPageReload.getTime()) {
+          location.reload();
+        } else {
+          render(cachedData);
+        }
+        if (Date.now() > lastDataLoad.getTime() + JSON_REFETCH_MS) {
+          fetchData();
+          lastDataLoad = new Date();
+        }
+      }, CONTENT_REFRESH_MS);
     }
 
     init();
