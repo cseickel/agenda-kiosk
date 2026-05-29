@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
     html {
-      font-size: 4vh;
+      font-size: 6vh;
     }
     * {
       margin: 0;
@@ -70,21 +70,21 @@
       content: ")";
     }
     .today-name {
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: bold;
       display: inline;
       color: steelblue;
     }
     .date-block {
-      font-size: 1.5rem;
+      font-size: 1rem;
       font-weight: 100;
       opacity: 0.8;
       color: lightsteelblue;
       display: inline;
     }
     .time-block {
-      font-size: 1.75rem;
-      line-height: 1.75rem;
+      font-size: 1.25rem;
+      line-height: 1.25rem;
       margin-bottom: 0.5rem;
       font-weight: bold;
       display: inline-block;
@@ -92,14 +92,14 @@
     }
     .time-block::before {
       content: "The time is ";
-      font-size: 1.5rem;
+      font-size: 1rem;
       font-weight: 100;
       opacity: 0.8;
       color: lightsteelblue;
       display: inline;
     }
     .days-away {
-      font-size: 1.333em;
+      font-size: 1rem;
       font-weight: 700;
       display: inline;
     }
@@ -126,9 +126,10 @@
     .agenda-item {
       margin-bottom: 0.1em;
     }
-    .countdown {
-      opacity: 0.7;
-      font-size: 0.85em;
+    .agenda-item-countdown {
+      color: #f7f4d5;
+    }
+    .agenda-item-time {
     }
   </style>
 </head>
@@ -141,6 +142,7 @@
     const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const JSON_REFETCH_MS = 5 * 60 * 1000;
     const CONTENT_REFRESH_MS = 60 * 1000;
+    const MAX_DAYS = 2;
 
     const EMPTY_MESSAGES = [
       { future: "Free day", today: "This is a free day, enjoy!" },
@@ -224,7 +226,7 @@
       const diffDays = Math.round((eventDay - todayDay) / (1000 * 60 * 60 * 24));
       if (diffDays === 0) return 'Today';
       if (diffDays === 1) return 'Tomorrow';
-      return `In ${diffDays} days`;
+      return `${diffDays} days from now`;
     }
 
     function applyStyles(element, styleObj) {
@@ -266,9 +268,9 @@
         const date = new Date(item.date);
         const text = item.text.map(t => t.content).join('');
         if (date < today) {
-          console.log("Skipping item because date is in the past",{text , date, today});
           continue;
         }
+        
         const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
         if (!groups.has(dayKey)) {
           groups.set(dayKey, { date, items: [] });
@@ -276,7 +278,7 @@
         if (item.showAfter) {
           const showAfter = new Date(item.showAfter);
           if (showAfter > today) {
-            console.log("Skipping item because showAfter",{text, showAfter, today});
+            //console.log("Skipping item because showAfter",{text, showAfter, today});
             continue;
           }
         }
@@ -302,9 +304,9 @@
 
       const agendaGroups = groupAgendaByDay(data.agenda || []);
 
-      // Generate 4 days: today + 3
+      // Generate MAX_DAYS days: today + MAX_DAYS - 1
       const relevantGroups = [];
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < MAX_DAYS; i++) {
         const dayDate = new Date(today);
         dayDate.setDate(dayDate.getDate() + i);
 
@@ -349,7 +351,7 @@
 
       relevantGroups.forEach((group, index) => {
         const isToday = isSameDay(group.date, now);
-        const scale = Math.pow(0.9, index);
+        const scale = 1.0 - (index * 0.02);
         const opacity = Math.pow(0.9, index);
 
         const block = document.createElement('div');
@@ -395,7 +397,7 @@
           const agendaDiv = document.createElement('div');
           agendaDiv.className = 'agenda';
 
-          const futureItems = group.items.filter(item => item.dateObj > now || item.allDay);
+          const futureItems = group.items.filter(item => item.dateObj.getTime() > now.getTime() || item.allDay);
           if (futureItems.length === 0) {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'agenda-item';
@@ -405,22 +407,29 @@
             for (const item of futureItems) {
               const itemDiv = document.createElement('div');
               itemDiv.className = 'agenda-item';
-              itemDiv.appendChild(renderTextArray(item.text));
 
-              if (!item.allDay) {
-                const timeSpan = document.createElement('span');
-                timeSpan.textContent = ' at ' + formatTime(item.dateObj);
-                itemDiv.appendChild(timeSpan);
-
+              if (item.allDay) {
+                itemDiv.appendChild(renderTextArray(item.text));
+              } else {
+                const atTime = formatTime(item.dateObj);
                 const countdown = getCountdown(item.dateObj, now);
                 if (countdown) {
                   const countdownSpan = document.createElement('span');
-                  countdownSpan.className = 'countdown';
-                  countdownSpan.textContent = `, which is ${countdown} from now`;
+                  countdownSpan.className = 'agenda-item-countdown';
+                  countdownSpan.textContent = `${countdown} from now → `;
                   itemDiv.appendChild(countdownSpan);
                 }
+                //console.log(item.text.map(t => t.content).join(''), {
+                //  item,
+                //  atTime,
+                //  countdown,
+                //});
+                itemDiv.appendChild(renderTextArray(item.text));
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'agenda-item-time';
+                timeSpan.textContent = ` at ${atTime}`;
+                itemDiv.appendChild(timeSpan);
               }
-
               agendaDiv.appendChild(itemDiv);
             }
           }
