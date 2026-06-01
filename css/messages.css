@@ -1,0 +1,40 @@
+/* Left-hand messages sidebar. Auto-hides when no messages are present. */
+
+#messages-container {
+  display: flex;
+  flex: 1;
+  font-size: 0.8rem;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  margin: 0.25 em; /* NOTE: invalid value (space) - preserved verbatim, see refactor notes */
+  margin-bottom: 1em;
+  height: 100vh;
+  border-right: 1px solid #444;
+}
+
+#messages-container:empty {
+  display: none;
+}
+
+.message-header {
+  display: inline-block;
+  font-weight: bold;
+  text-align: center;
+  color: steelblue;
+  padding: 0.25em;
+  padding-bottom: 0;
+  margin-left: auto;
+  margin-right: auto;
+  border-bottom: 0.1em solid steelblue;
+}
+
+.message-item {
+  padding: 0.25em;
+  background-color: palegoldenrod;
+  border: 0.05em solid goldenrod;
+  color: black;
+  margin: 0.25em;
+}
