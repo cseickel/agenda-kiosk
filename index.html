@@ -24,9 +24,44 @@
       height: 100%;
       display: flex;
     }
-    .container {
+    #messages-container {
       display: flex;
       flex: 1;
+      font-size: 0.8rem;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      margin: 0.25 em;
+      margin-bottom: 1em;
+      height: 100vh;
+      border-right: 1px solid #444;
+    }
+    #messages-container:empty {
+      display: none;
+    }
+    .message-header {
+      display: inline-block;
+      font-weight: bold;
+      text-align: center;
+      color: steelblue;
+      padding: 0.25em;
+      padding-bottom: 0;
+      margin-left: auto;
+      margin-right: auto;
+      border-bottom: 0.1em solid steelblue;
+    }
+    .message-item {
+      padding: 0.25em;
+      background-color: palegoldenrod;
+      border: 0.05em solid goldenrod;
+      color: black;
+      margin: 0.25em;
+    }
+    .container {
+      display: flex;
+      flex: 3;
       flex-direction: column;
       justify-content: top;
       align-items: stretch;
@@ -113,13 +148,6 @@
       color: lightsteelblue;
       line-height: 0.8em;
     }
-    .messages {
-      font-size: 1em;
-      margin-bottom: 0.2em;
-    }
-    .message-item {
-      margin-bottom: 0.2em;
-    }
     .agenda {
       font-size: 1em;
     }
@@ -131,9 +159,13 @@
     }
     .agenda-item-time {
     }
+    table {
+      border-collapse: collapse;
+    }
   </style>
 </head>
 <body>
+  <div id="messages-container"></div>
   <div class="container" id="app"></div>
 
   <script>
@@ -298,6 +330,29 @@
         document.getElementById('app').innerHTML = '<p style="font-size:24px;">Loading agenda...</p>';
         return;
       }
+      const container = document.getElementById('app');
+      const fragment = document.createDocumentFragment();
+      const messagesFragment = document.createDocumentFragment();
+
+      // Messages
+      const messagesContainer = document.getElementById('messages-container');
+      messagesContainer.innerHTML = '';
+      if (data.messages && data.messages.length > 0) {
+        const headerText = document.createElement('span');
+        headerText.className = 'message-header';
+        headerText.textContent = 'Messages';
+        messagesContainer.appendChild(headerText);
+        for (const msg of data.messages) {
+          const msgItem = document.createElement('div');
+          msgItem.className = 'message-item';
+          msgItem.appendChild(renderTextArray(msg.text));
+          messagesContainer.appendChild(msgItem);
+        }
+        // final spacer item to fill remaining space
+        const spacer = document.createElement('div');
+        spacer.style = 'flex-grow: 1;';
+        messagesContainer.appendChild(spacer);
+      }
 
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -318,8 +373,6 @@
         });
       }
 
-      const container = document.getElementById('app');
-      const fragment = document.createDocumentFragment();
 
       const block = document.createElement('div');
       block.className = 'today-container';
@@ -339,6 +392,7 @@
       todayHeader.appendChild(todayIs);
       todayHeader.appendChild(todayName)
       todayHeader.appendChild(dateBlock);
+
       block.appendChild(todayHeader);
 
       const timeBlock = document.createElement('span');
@@ -370,7 +424,7 @@
         const daysAwaySpan = document.createElement('span');
         let daysAway = getDaysAway(group.date, now);
         if (daysAway === 'Today') {
-          daysAway = "Today's Agenda";
+          daysAway = "What's Happening Today";
         }
         daysAwaySpan.className = 'days-away';
         daysAwaySpan.textContent = daysAway;
@@ -380,19 +434,6 @@
 
 
         if (isToday) {
-          // Messages
-          if (data.messages && data.messages.length > 0) {
-            const messagesDiv = document.createElement('div');
-            messagesDiv.className = 'messages';
-            for (const msg of data.messages) {
-              const msgItem = document.createElement('div');
-              msgItem.className = 'message-item';
-              msgItem.appendChild(renderTextArray(msg.text));
-              messagesDiv.appendChild(msgItem);
-            }
-            block.appendChild(messagesDiv);
-          }
-
           // Today's agenda with times and countdown
           const agendaDiv = document.createElement('div');
           agendaDiv.className = 'agenda';
