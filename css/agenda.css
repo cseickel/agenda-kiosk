@@ -10,15 +10,13 @@
   text-align: center;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  margin: 0.25 em; /* NOTE: invalid value (space) - preserved verbatim, see refactor notes */
   margin-bottom: 1em;
 }
 
 /* Today's header + clock block */
 .today-container {
   border: none !important;
-  padding-top: 0.5em;
-  padding-bottom: 1.0rem;
+  padding-bottom: 0.5rem;
   font-weight: 100;
 }
 
@@ -113,8 +111,20 @@
   margin-bottom: 0.1em;
 }
 
+/* Timed items: 2-column grid. First column auto-sizes to the widest
+   countdown and shares that width down every row (table-like alignment
+   without a <table>). */
+.timed-agenda {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 0.5em;
+  row-gap: 0.1em;
+  text-align: left;
+}
+
 .agenda-item-countdown {
   color: #f7f4d5;
+  text-align: right;
 }
 
 .agenda-item-time {

@@ -9,8 +9,8 @@
   text-align: center;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  margin: 0.25 em; /* NOTE: invalid value (space) - preserved verbatim, see refactor notes */
   margin-bottom: 1em;
+  padding-top: 0.25rem;
   height: 100vh;
   border-right: 1px solid #444;
 }

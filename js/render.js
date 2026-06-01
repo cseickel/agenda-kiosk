@@ -40,7 +40,8 @@ function renderTodayBlock(now) {
   }, [header, time]);
 }
 
-// Today's agenda: future (and all-day) items, with countdown + time.
+// Today's agenda: all-day items listed on top, then timed items as a
+// 2-column grid (countdown | "text at time").
 function renderTodayAgenda(group, now) {
   const agenda = el('div', { className: 'agenda' });
   const futureItems = group.items.filter(
@@ -54,25 +55,34 @@ function renderTodayAgenda(group, now) {
     return agenda;
   }
 
-  for (const item of futureItems) {
-    const itemDiv = el('div', { className: 'agenda-item' });
-    if (item.allDay) {
-      itemDiv.appendChild(renderTextArray(item.text));
-    } else {
+  // All-day items first, as plain lines.
+  for (const item of futureItems.filter(item => item.allDay)) {
+    agenda.appendChild(
+      el('div', { className: 'agenda-item' }, [renderTextArray(item.text)]));
+  }
+
+  // Timed items as a 2-column grid. The countdown column auto-sizes to its
+  // widest entry (see .timed-agenda in css/agenda.css). Timed future items
+  // always have dateObj > now, so countdown is non-null; the fallback keeps
+  // the grid cell present regardless, so columns never drift.
+  const timedItems = futureItems.filter(item => !item.allDay);
+  if (timedItems.length > 0) {
+    const grid = el('div', { className: 'timed-agenda' });
+    for (const item of timedItems) {
       const countdown = getCountdown(item.dateObj, now);
-      if (countdown) {
-        itemDiv.appendChild(el('span', {
-          className: 'agenda-item-countdown',
-          text: `${countdown} from now → `,
-        }));
-      }
-      itemDiv.appendChild(renderTextArray(item.text));
-      itemDiv.appendChild(el('span', {
-        className: 'agenda-item-time',
-        text: ` at ${formatTime(item.dateObj)}`,
+      grid.appendChild(el('div', {
+        className: 'agenda-item-countdown',
+        text: countdown ? `${countdown} from now → ` : '',
       }));
+      grid.appendChild(el('div', {}, [
+        renderTextArray(item.text),
+        el('span', {
+          className: 'agenda-item-time',
+          text: ` at ${formatTime(item.dateObj)}`,
+        }),
+      ]));
     }
-    agenda.appendChild(itemDiv);
+    agenda.appendChild(grid);
   }
   return agenda;
 }
